@@ -3,6 +3,8 @@ import os
 from pathlib import Path
 from tkinter import Tk, Canvas, Button, PhotoImage, messagebox, ttk, Frame
 from matplotlib.backend_bases import NavigationToolbar2
+import matplotlib
+matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from databaseHandler import connect_to_database, create_daily_sales_table, fetch_monthly_sales_data, query_and_get_data
@@ -106,6 +108,29 @@ def display_monthly_sales(data):
     # Pack the Treeview and scrollbar
     tree.pack(side='left', fill='both', expand=True)
     scrollbar.pack(side='right', fill='y')
+
+    # Create a Matplotlib line graph
+    graph_frame = Frame(window, bg="#FFFFFF", bd=0, highlightthickness=0)
+    graph_frame.place(x=21.0, y=111.0, width=345.0 - 21.0, height=294.0 - 111.0)
+
+    months = [row[0] for row in data]
+    totals = [row[1] for row in data]
+
+    plt.figure(figsize=(324, 183), dpi=100)
+    plt.plot(months, totals, marker='o', color='b')
+    plt.xlabel('Month')
+    plt.ylabel('Total Sales')
+    plt.title('Monthly Sales')
+    plt.grid(True)
+    plt.tight_layout()
+
+    canvas = FigureCanvasTkAgg(plt.gcf(), master=graph_frame)
+    canvas.draw()
+    canvas.get_tk_widget().pack(side='top', fill='both', expand=1)
+
+    toolbar = NavigationToolbar2(canvas, graph_frame)
+    toolbar.update()
+    canvas.get_tk_widget().pack(side='top', fill='both', expand=1)
 
 def open_addSales_and_destroy_window():
     window.destroy()
@@ -339,57 +364,6 @@ def main():
 
     display_daily_sales(daily_sales_data)
     display_monthly_sales(monthly_sales_data)
-
-def display_monthly_sales(data):
-    # Create a Frame inside the Canvas to hold the Treeview for monthly_sales
-    monthly_sales_frame = Frame(window, bg="#FFFFFF", bd=0, highlightthickness=0)
-    monthly_sales_frame.place(x=57.0, y=335.0, width=309.0 - 57.0, height=496.0 - 335.0)
-
-    # Create a Treeview widget
-    tree = ttk.Treeview(monthly_sales_frame, show='headings')
-
-    # Add columns to the Treeview
-    columns_to_display = ["Month", "Total"]
-    tree["columns"] = tuple(columns_to_display)
-
-    for column in columns_to_display:
-        tree.heading(column, text=column)
-        tree.column(column, width=100)  # Adjust the width as needed
-
-    # Add data to the Treeview
-    for row in data:
-        tree.insert('', 'end', values=row)
-
-    # Add a scrollbar
-    scrollbar = ttk.Scrollbar(monthly_sales_frame, orient='vertical', command=tree.yview)
-    tree.configure(yscroll=scrollbar.set)
-
-    # Pack the Treeview and scrollbar
-    tree.pack(side='left', fill='both', expand=True)
-    scrollbar.pack(side='right', fill='y')
-
-    # Create a Matplotlib line graph
-    graph_frame = Frame(window, bg="#FFFFFF", bd=0, highlightthickness=0)
-    graph_frame.place(x=21.0, y=111.0, width=345.0 - 21.0, height=294.0 - 111.0)
-
-    months = [row[0] for row in data]
-    totals = [row[1] for row in data]
-
-    plt.figure(figsize=(324, 183), dpi=100)
-    plt.plot(months, totals, marker='o', color='b')
-    plt.xlabel('Month')
-    plt.ylabel('Total Sales')
-    plt.title('Monthly Sales')
-    plt.grid(True)
-    plt.tight_layout()
-
-    canvas = FigureCanvasTkAgg(plt.gcf(), master=graph_frame)
-    canvas.draw()
-    canvas.get_tk_widget().pack(side='top', fill='both', expand=1)
-
-    toolbar = NavigationToolbar2(canvas, graph_frame)
-    toolbar.update()
-    canvas.get_tk_widget().pack(side='top', fill='both', expand=1)
 
     window.resizable(False, False)
     window.mainloop()
