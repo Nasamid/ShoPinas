@@ -1,7 +1,8 @@
+from datetime import datetime
 import os
 from pathlib import Path
-from tkinter import Tk, Canvas, Button, PhotoImage, ttk, Frame
-from databaseHandler import connect_to_database, query_and_get_data
+from tkinter import Tk, Canvas, Button, PhotoImage, messagebox, ttk, Frame
+from databaseHandler import connect_to_database, create_daily_sales_table, query_and_get_data
 
 # MySQL connection details
 mysql_host = '127.0.0.1'
@@ -18,7 +19,7 @@ def relative_to_assets(path: str) -> Path:
     return assets_path / Path(path)
 
 def display_daily_sales(data):
-    # Create a Frame inside the Canvas to hold the Treeview
+    # Create a Frame inside the Canvas to hold the Tre]eview
     tree_frame = Frame(window, bg="#FFFFFF", bd=0, highlightthickness=0)
     tree_frame.place(x=426.0, y=105.0, width=722.0 - 426.0, height=468.0 - 105.0)
     # Create a Treeview widget
@@ -41,6 +42,39 @@ def display_daily_sales(data):
     tree.pack(side='left', fill='both', expand=True)
     scrollbar.pack(side='right', fill='y')
     tree.yview_moveto(1.0)
+
+def update_monthly_sales(db_connection, monthID):
+    cursor = db_connection.cursor()
+
+    # Fetch the subtotal values from the current daily_sales table
+    cursor.execute(f"SELECT subtotal FROM daily_sales")
+    subtotal_values = [row[0] for row in cursor.fetchall()]
+
+    # Calculate the total for the current month
+    total_for_month = sum(subtotal_values)
+
+    # Update the corresponding month in the monthly_sales table
+    update_query = f"""
+    UPDATE monthly_sales
+    SET total = total + {total_for_month}
+    WHERE msID = '{monthID}'
+    """
+    cursor.execute(update_query)
+
+    db_connection.commit()
+    cursor.close()
+
+def save_button_clicked():
+    # Create a new daily_sales table
+    table_name = create_daily_sales_table(db_connection)
+
+    # Update the monthly_sales table
+    current_month = 1  # Change this to the actual current month
+    update_monthly_sales(db_connection, current_month)
+
+    messagebox.showinfo("Save", f"Data saved to {table_name} and monthly sales updated.")
+
+    db_connection.close()
 
 def display_monthly_sales(data):
     # Create a Frame inside the Canvas to hold the Treeview for monthly_sales
@@ -73,7 +107,6 @@ def display_monthly_sales(data):
 def open_addSales_and_destroy_window():
     window.destroy()
     os.system('python addSales.py')
-
 
 def main():
     global window
@@ -235,7 +268,7 @@ def main():
         image=button_image_1,
         borderwidth=0,
         highlightthickness=0,
-        command=lambda: print("button_1 clicked"),
+        command=save_button_clicked,
         relief="flat"
     )
     button_1.place(
@@ -278,6 +311,7 @@ def main():
     )
     button_image_2 = PhotoImage(
         file=relative_to_assets("button_2.png"))
+    
     button_2 = Button(
         image=button_image_2,
         borderwidth=0,
@@ -293,8 +327,10 @@ def main():
         height=29.0
     )
 
+    current_date = datetime.now().strftime("%Y%m%d")
+
     # Automatically display the daily sales table upon window startup
-    daily_sales_data = query_and_get_data(db_connection, 'SELECT products.name, daily_sales.quantity, daily_sales.subtotal FROM daily_sales JOIN products ON daily_sales.productID = products.productID')
+    daily_sales_data = query_and_get_data(db_connection, f'SELECT products.name, daily_sales_{current_date}.quantity, daily_sales_{current_date}.subtotal FROM daily_sales_{current_date} JOIN products ON daily_sales_{current_date}.productID = products.productID')
     monthly_sales_data = query_and_get_data(db_connection, 'SELECT month, total FROM monthly_sales')
 
     display_daily_sales(daily_sales_data)

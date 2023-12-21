@@ -1,3 +1,4 @@
+from datetime import datetime
 import mysql.connector
 
 def connect_to_database(host, user, password, database):
@@ -46,13 +47,21 @@ def query_and_get_data(connection, query):
     cursor.execute(query)
     return cursor.fetchall()
 
+from datetime import datetime
+
 def add_daily_sale(connection, product_id, quantity, subtotal):
-    """Add a new row to the daily_sales table."""
+    """Add a new row to the daily_sales table with the current date."""
     cursor = connection.cursor()
 
     try:
-        # Insert a new row into the daily_sales table
-        query = f"INSERT INTO daily_sales (productID, quantity, subtotal) VALUES ({product_id}, {quantity}, {subtotal})"
+        # Get the current date in the format YYYYMMDD
+        current_date = datetime.now().strftime("%Y%m%d")
+
+        # Construct the table name
+        table_name = f"daily_sales_{current_date}"
+
+        # Insert a new row into the dynamically named daily_sales table
+        query = f"INSERT INTO {table_name} (productID, quantity, subtotal) VALUES ({product_id}, {quantity}, {subtotal})"
         cursor.execute(query)
 
         # Commit the changes to the database
@@ -65,6 +74,31 @@ def add_daily_sale(connection, product_id, quantity, subtotal):
     finally:
         # Close the cursor
         cursor.close()
+
+
+def create_daily_sales_table(db_connection):
+    # Create a new table with the current date as the name
+    current_date = datetime.now().strftime("%Y%m%d")
+    table_name = f"daily_sales_{current_date}"
+    
+    cursor = db_connection.cursor()
+
+    create_table_query = f"""
+    CREATE TABLE IF NOT EXISTS {table_name} (
+        salesID INT NOT NULL AUTO_INCREMENT, 
+        productID INT,
+        quantity INT,
+        subtotal FLOAT,
+        PRIMARY KEY (salesID),
+        FOREIGN KEY (productID) REFERENCES products(productID)
+    )
+    """
+    cursor.execute(create_table_query)
+
+    db_connection.commit()
+    cursor.close()
+
+    return table_name
 
 def close_connection(connection):
     """Close the MySQL database connection."""
