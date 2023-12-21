@@ -75,6 +75,26 @@ def add_daily_sale(connection, product_id, quantity, subtotal):
         # Close the cursor
         cursor.close()
 
+def fetch_monthly_sales_data(connection):
+    """Fetch monthly sales data from the database."""
+    cursor = connection.cursor()
+
+    try:
+        # Assuming your monthly_sales table has columns 'month' and 'total'
+        query = "SELECT month, total FROM monthly_sales"
+        cursor.execute(query)
+
+        # Fetch all rows from the result
+        monthly_sales_data = cursor.fetchall()
+
+        return monthly_sales_data
+
+    except Exception as e:
+        print(f"Error fetching monthly sales data: {e}")
+        return None
+
+    finally:
+        cursor.close()
 
 def create_daily_sales_table(db_connection):
     # Create a new table with the current date as the name

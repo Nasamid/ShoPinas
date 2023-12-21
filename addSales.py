@@ -360,6 +360,39 @@ def main():
         width=97.0,
         height=32.0
     )
+        #ADD QUANTITY BUTTON
+    button_image_3 = PhotoImage(
+        file=relative_to_assets("button_3.png"))
+    button_3 = Button(
+        image=button_image_3,
+        borderwidth=0,
+        highlightthickness=5,
+        command=lambda: increment_quantity(),
+        relief="flat"
+    )
+    button_3.place(
+        x=325.0,
+        y=270.0,
+        width=31.0,
+        height=24.0
+    )
+
+    #SUBTRACT 1 FROM QUANTITY
+    button_image_4 = PhotoImage(
+        file=relative_to_assets("button_4.png"))
+    button_4 = Button(
+        image=button_image_4,
+        borderwidth=0,
+        highlightthickness=5,
+        command=lambda: decrement_quantity(),
+        relief="flat"
+    )
+    button_4.place(
+        x=365.0,
+        y=270.0,
+        width=31.0,
+        height=24.0
+    )
 
     # Bind the function to the Entry widget
     entry_var_1.trace_add("write", on_entry_change)
