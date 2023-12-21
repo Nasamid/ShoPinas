@@ -40,6 +40,7 @@ def display_daily_sales(data):
     # Pack the Treeview and scrollbar
     tree.pack(side='left', fill='both', expand=True)
     scrollbar.pack(side='right', fill='y')
+    tree.yview_moveto(1.0)
 
 def display_monthly_sales(data):
     # Create a Frame inside the Canvas to hold the Treeview for monthly_sales
@@ -68,6 +69,11 @@ def display_monthly_sales(data):
     # Pack the Treeview and scrollbar
     tree.pack(side='left', fill='both', expand=True)
     scrollbar.pack(side='right', fill='y')
+
+def open_addSales_and_destroy_window():
+    window.destroy()
+    os.system('python addSales.py')
+
 
 def main():
     global window
@@ -276,7 +282,7 @@ def main():
         image=button_image_2,
         borderwidth=0,
         highlightthickness=0,
-        command=lambda: os.system('python addSales.py'),
+        command=open_addSales_and_destroy_window,
         relief="flat"
     )
 
