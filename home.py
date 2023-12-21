@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from tkinter import Tk, Canvas, Entry, Text, Button, PhotoImage, ttk, Frame
+from tkinter import Tk, Canvas, Entry, Text, Button, PhotoImage, Toplevel, ttk, Frame
 from databaseHandler import connect_to_database, create_table, insert_data, query_and_print_data, close_connection, query_and_get_data
 import importlib
 
@@ -222,7 +222,8 @@ button_3.place(
 
 # Function to display daily sales in a Tkinter table
 def display_daily_sales():
-    query = 'SELECT productID, quantity, subtotal FROM daily_sales'  # Specify the columns you want
+    # Specify the columns you want, including the product name
+    query = 'SELECT products.name, daily_sales.quantity, daily_sales.subtotal FROM daily_sales JOIN products ON daily_sales.productID = products.productID'
     data = query_and_get_data(db_connection, query)
 
     if not data:
@@ -233,10 +234,10 @@ def display_daily_sales():
     tree_frame = Frame(window, bg="#FFFFFF", bd=0, highlightthickness=0)
     tree_frame.place(x=426.0, y=105.0, width=722.0 - 426.0, height=468.0 - 105.0)
     # Create a Treeview widget
-    tree = ttk.Treeview(tree_frame, columns=["ProductID", "Quantity", "Subtotal (Php)"], show='headings')
+    tree = ttk.Treeview(tree_frame, columns=["Product", "Quantity", "Subtotal (Php)"], show='headings')
     
     # Add columns to the Treeview
-    for col in ["ProductID", "Quantity", "Subtotal (Php)"]:
+    for col in ["Product", "Quantity", "Subtotal (Php)"]:
         tree.heading(col, text=col)
         tree.column(col, width=100)  # Adjust the width as needed
 
@@ -251,7 +252,6 @@ def display_daily_sales():
     # Pack the Treeview and scrollbar
     tree.pack(side='left', fill='both', expand=True)
     scrollbar.pack(side='right', fill='y')
-    
 
 # Function to display monthly sales in a Tkinter table
 def display_monthly_sales():
@@ -289,10 +289,18 @@ def display_monthly_sales():
     tree.pack(side='left', fill='both', expand=True)
     scrollbar.pack(side='right', fill='y')
 
-def open_add_sales_and_destroy_window():
-    # Destroy the current window
-    os.system('python addSales.py')
-    window.destroy()
+def open_add_sales_window():
+    add_sales_window = Toplevel(window)
+    add_sales_window.geometry("607x345")
+    add_sales_window.configure(bg="#FFFFFF")
+    
+    # Import addSales.py module
+    import addSales
+
+    # Call the necessary functions from addSales.py
+    addSales.display_daily_sales()
+    # You can call other functions if needed
+
     
 button_image_2 = PhotoImage(
     file=relative_to_assets("button_2.png"))
@@ -300,7 +308,7 @@ button_2 = Button(
     image=button_image_2,
     borderwidth=0,
     highlightthickness=0,
-    command = lambda: open_add_sales_and_destroy_window(),
+    command = open_add_sales_window,
     relief="flat"
 )
 
@@ -317,8 +325,6 @@ def on_mouse_move(event):
 
 
 #window.bind("<Motion>", on_mouse_move)
-
-
 # Automatically display the daily sales table upon window startup
 display_daily_sales()
 display_monthly_sales()

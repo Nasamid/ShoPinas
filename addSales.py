@@ -3,7 +3,7 @@ from pathlib import Path
 from tkinter import Tk, Canvas, Entry, Text, Button, PhotoImage, messagebox
 from tkinter import StringVar
 from databaseHandler import connect_to_database, query_and_get_data, close_connection, add_daily_sale
-from home import display_daily_sales
+from home import display_daily_sales, display_monthly_sales
 #from home import display_daily_sales
 
 # Connect to the MySQL database
@@ -403,3 +403,4 @@ entry_4.bind("<Return>", on_entry_4_enter)
 
 window.resizable(False, False)
 window.mainloop()
+
