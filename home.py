@@ -27,7 +27,12 @@ def relative_to_assets(path: str) -> Path:
 def display_daily_sales(data):
     # Create a Frame inside the Canvas to hold the Tre]eview
     tree_frame = Frame(window, bg="#FFFFFF", bd=0, highlightthickness=0)
-    tree_frame.place(x=426.0, y=105.0, width=722.0 - 426.0, height=468.0 - 105.0)
+    tree_frame.place(
+        x=532.5, 
+        y=131.25,
+        width=902.5 - 532.5,
+        height=585.0 - 131.25
+    )
     # Create a Treeview widget
     tree = ttk.Treeview(tree_frame, columns=["Product", "Quantity", "Subtotal (Php)"], show='headings')
     
@@ -90,14 +95,14 @@ def main():
     global window
     window = Tk()
 
-    window.geometry("750x525+400+150")
+    window.geometry("938x656+400+150")
     window.configure(bg="#F0F0F0")
 
     canvas = Canvas(
         window,
         bg="#F0F0F0",
-        height=525,
-        width=750,
+        height=656,
+        width=938,
         bd=0,
         highlightthickness=0,
         relief="ridge"
@@ -107,22 +112,22 @@ def main():
     image_image_1 = PhotoImage(
         file=relative_to_assets("image_1.png"))
     image_1 = canvas.create_image(
-        188.0,
-        270.0,
+        225.0,
+        337.5,
         image=image_image_1
     )
 
     canvas.create_rectangle(
-    -5.0,
-    -25.0,
-    785.0,
-    50.0,
-    fill="#FFFFFF",
+    0.0, 
+    -31.25,
+    1356.25,
+    62.5,
+    fill="#FFFFFF", 
     outline="#000000")
 
     canvas.create_text(
-        177.93130493164062,
-        13.0,
+        222.41413157050078,
+        16.25,
         anchor="nw",
         text="SALES TRACKER",
         fill="#424550",
@@ -130,26 +135,26 @@ def main():
     )
 
     canvas.create_text(
-        11.48614501953125,
-        -7,
+        14.3576806640625,
+        -8.75, 
         anchor="nw",
         text="Sho",
-        fill="#FF0000",
+        fill="#FF0000",  
         font=("Josefin Sans", 36 * -1)
     )
 
     canvas.create_text(
-        97.26156616210938,
-        -7,
+        121.57469577651172,
+        -8.75,
         anchor="nw",
         text="i",
         fill="#F3BF07",
-        font=("Josefin Sans", 36 * -1)
+        font=("Josefin Sans", 36 * -1)  
     )
 
     canvas.create_text(
-        73.77542114257812,
-        -7,
+        92.21892768554688,
+        -8.75,
         anchor="nw",
         text="P nas",
         fill="#032FA1",
@@ -157,58 +162,58 @@ def main():
     )
 
     canvas.create_rectangle(
-        57.0,
-        335.0,
-        309.0,
-        496.0,
+        171.25,
+        418.75,
+        386.25, 
+        620.0,
         fill="#FFFFFF",
         outline="")
 
     #MONTHLY SALES RECT
     canvas.create_rectangle(
-        57.0,
-        335.0,
-        309.0,
-        496.0,
+        200.25,
+        418.75,
+        386.25,
+        620.0,
         fill="#FFFFFF",
         outline="")
 
     canvas.create_rectangle(
-        21.0,
-        111.0,
-        345.0,
-        294.0,
+        156.25,
+        138.75,  
+        431.25,
+        367.5,
         fill="#FFFFFF",
         outline="")
-
+    
     #GRAPH RECT
     canvas.create_rectangle(
-        21.0,
-        111.0,
-        345.0,
-        294.0,
+        26.25,
+        138.75,
+        431.25,
+        367.5,
         fill="#FFFFFF",
         outline="")
 
     canvas.create_rectangle(
-        426.0,
-        105.0,
-        722.0,
-        468.0,
-        fill="#FFFFFF",
+        532.5,
+        131.25,
+        902.5,
+        585.0,
+        fill="#FFFFFF", 
         outline="")
 
     canvas.create_rectangle(
-        426.0,
-        105.0,
-        722.0,
-        468.0,
+        532.5,
+        131.25,
+        902.5,
+        585.0,
         fill="#D9D9D9",
         outline="")
 
     canvas.create_text(
-        27.0,
-        87.0,
+        287.5,
+        108.75, 
         anchor="nw",
         text="MONTHLY SALES",
         fill="#000000",
@@ -216,17 +221,17 @@ def main():
     )
 
     canvas.create_text(
-        638.0,
-        83.0,
+        797.5,
+        103.75,
         anchor="nw",
         text="DAILY SALES",
-        fill="#000000",
+        fill="#000000", 
         font=("Josefin Sans", 13 * -1)
     )
 
     canvas.create_text(
-        57.0,
-        310.0,
+        285.0, 
+        375.5,
         anchor="nw",
         text="CHOOSE A MONTH",
         fill="#000000",
@@ -234,10 +239,10 @@ def main():
     )
 
     canvas.create_rectangle(
-        426.0,
-        480.0,
-        529.0,
-        505.0,
+        532.5,
+        600.0,
+        661.25,
+        631.25, 
         fill="#FFFFFF",
         outline="")
 
@@ -251,31 +256,31 @@ def main():
         relief="flat"
     )
     button_1.place(
-        x=426.0,
-        y=480.0,
-        width=103.0,
-        height=29.0
+        x=532.5, 
+        y=600.0,
+        width=128.75, 
+        height=36.25
     )
 
     canvas.create_rectangle(
-        566.0,
-        480.0,
-        640.0,
-        505.0,
+        707.5,
+        600.0,
+        800.0,
+        631.25,
         fill="#FFFFFF",
         outline="")
-
+    
     canvas.create_rectangle(
-        648.0,
-        480.0,
-        722.0,
-        505.0,
+        810.0,
+        600.0,
+        902.5,
+        631.25,
         fill="#FFFFFF",
         outline="")
 
     button_image_3 = PhotoImage(
         file=relative_to_assets("button_3.png"))
-    button_3 = Button(
+    button_3 = Button(  
         image=button_image_3,
         borderwidth=0,
         highlightthickness=0,
@@ -283,32 +288,38 @@ def main():
         relief="flat"
     )
     button_3.place(
-        x=648.0,
-        y=480.0,
-        width=76.0,
-        height=28.0
+        x=810.0,
+        y=600.0, 
+        width=95.0,
+        height=35.0  
     )
+    
     button_image_2 = PhotoImage(
         file=relative_to_assets("button_2.png"))
     
     button_2 = Button(
-        image=button_image_2,
+        image=button_image_2, 
         borderwidth=0,
         highlightthickness=0,
         command=open_addSales_and_destroy_window,
-        relief="flat"
+        relief="flat" 
     )
 
     button_2.place(
-        x=566.0,
-        y=480.0,
-        width=85.0,
-        height=29.0
+        x=707.5,
+        y=600.0,
+        width=106.25,
+        height=36.25
     )
 
     # Create a Frame inside the Canvas to hold the Treeview for monthly_sales
     monthly_sales_frame = Frame(window, bg="#FFFFFF", bd=0, highlightthickness=0)
-    monthly_sales_frame.place(x=57.0, y=335.0, width=309.0 - 57.0, height=496.0 - 335.0)
+    monthly_sales_frame.place(
+        x=100.25,
+        y=400.75, 
+        width=315,
+        height=220
+    )
     data = query_and_get_data(db_connection, 'SELECT month, total FROM monthly_sales')
 
     # Create a Treeview widget
@@ -336,34 +347,37 @@ def main():
 
     # Create a Matplotlib line graph
     graph_frame = Frame(window, bg="#FFFFFF", bd=0, highlightthickness=0)
-    graph_frame.place(x=21.0, y=111.0, width=345.0 - 21.0, height=294.0 - 111.0)
+    graph_frame.place(
+        x=26.25,
+        y=78.75,
+        width=470, 
+        height=367.5 - 78.75
+    )
 
     months = [row[0] for row in data]
     totals = [row[1] for row in data]
 
     # Adjust the figure size as needed
-    figsize = (3, 2)  # You can experiment with different sizes
-    plt.figure(figsize=figsize, dpi=100)
+    figsize = (18, 10)  # You can experiment with different sizes
+    plt.figure(figsize=figsize, dpi=50)
     plt.plot(months, totals, marker='o', color='b')
     plt.xlabel('Month')
     plt.ylabel('Total Sales')
-    plt.title('Monthly Sales')
+    plt.title('M O N T H L Y   S A L E S')
     plt.grid(True)
-
 
     canvas = FigureCanvasTkAgg(plt.gcf(), master=graph_frame)
     canvas.draw()
-    canvas.get_tk_widget().pack(side='top', fill='both', expand=1)
 
     toolbar = NavigationToolbar2Tk(canvas, graph_frame)
     toolbar.update()
-    canvas.get_tk_widget().pack(side='top', fill='both', expand=1)
+    canvas.get_tk_widget().pack(side='top', fill='both')
+    plt.gcf().set_size_inches(6,4)
 
     current_date = datetime.now().strftime("%Y%m%d")
 
     # Automatically display the daily sales table upon window startup
     daily_sales_data = query_and_get_data(db_connection, f'SELECT products.name, daily_sales_{current_date}.quantity, daily_sales_{current_date}.subtotal FROM daily_sales_{current_date} JOIN products ON daily_sales_{current_date}.productID = products.productID')
-    
 
     display_daily_sales(daily_sales_data)
 
