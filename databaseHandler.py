@@ -153,12 +153,14 @@ def get_previous_latest_daily_sales_table(db_connection):
 
         # Construct the table name for the second-to-last date
         previous_latest_table_name = f"daily_sales_{previous_latest_date}"
+        print(previous_latest_table_name)
 
         cursor.close()
         return previous_latest_table_name
     else:
         # If there are not enough tables, return None
         cursor.close()
+        print("NE")
         return None
 
 def create_daily_sales_table(db_connection):

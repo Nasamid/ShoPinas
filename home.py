@@ -20,6 +20,8 @@ mysql_database = 'shopinas_database'
 db_connection = connect_to_database(mysql_host, mysql_user, mysql_password, mysql_database)
 
 tree = None
+trees = None
+first_column_value = None
 
 def relative_to_assets(path: str) -> Path:
     output_path = Path(__file__).parent
@@ -62,11 +64,43 @@ def display_daily_sales(data):
     scrollbar.pack(side='right', fill='y')
     tree.yview_moveto(1.0)
 
-def update_monthly_sales(db_connection, monthID):
-    cursor = db_connection.cursor()
+def display_monthly_sales(data):
+    global trees
+    # Create a Frame inside the Canvas to hold the Treeview for monthly_sales
+    monthly_sales_frame = Frame(window, bg="#FFFFFF", bd=0, highlightthickness=0)
+    monthly_sales_frame.place(
+        x=100.25,
+        y=400.75, 
+        width=315,
+        height=220
+    )
 
-    # Get the current date
-    current_date = datetime.now().strftime("%Y%m%d")
+    # Create a Treeview widget
+    trees = ttk.Treeview(monthly_sales_frame, show='headings')
+
+    # Add columns to the Treeview
+    columns_to_display = ["Month", "Total"]
+    trees["columns"] = tuple(columns_to_display)
+
+    for column in columns_to_display:
+        trees.heading(column, text=column)
+        trees.column(column, width=100, anchor= "center")  # Adjust the width as needed
+
+    # Add data to the Treeview
+    for row in data:
+        trees.insert('', 'end', values=row)
+
+    # Add a scrollbar
+    scrollbar = ttk.Scrollbar(monthly_sales_frame, orient='vertical', command=trees.yview)
+    trees.configure(yscroll=scrollbar.set)
+
+    # Pack the Treeview and scrollbar
+    trees.pack(side='left', fill='both', expand=True)
+    scrollbar.pack(side='right', fill='y')
+
+    
+def update_monthly_sales(db_connection, month):
+    cursor = db_connection.cursor()
 
     table_name = get_previous_latest_daily_sales_table(db_connection)
 
@@ -81,27 +115,12 @@ def update_monthly_sales(db_connection, monthID):
     update_query = f"""
     UPDATE monthly_sales
     SET total = total + {total_for_month}
-    WHERE msID = '{monthID}'
+    WHERE month = '{month}'
     """
     cursor.execute(update_query)
 
     db_connection.commit()
     cursor.close()
-
-def save_button_clicked():
-    # Create a new daily_sales table
-    table_name = create_daily_sales_table(db_connection)
-
-    # Update the monthly_sales table
-    current_month = 1  # Change this to the actual current month
-    update_monthly_sales(db_connection, current_month)
-
-    daily_sales_data = query_and_get_data(db_connection, f'SELECT products.name, `{table_name}`.quantity, `{table_name}`.subtotal FROM `{table_name}` JOIN products ON `{table_name}`.productID = products.productID')
-    display_daily_sales(daily_sales_data)
-
-    messagebox.showinfo("Save", f"Data saved to Database and monthly sales updated.")
-
-    db_connection.close()
 
 def open_addSales_and_destroy_window():
     window.destroy()
@@ -349,41 +368,6 @@ def main():
         height=36.25
     )
 
-    # Create a Frame inside the Canvas to hold the Treeview for monthly_sales
-    monthly_sales_frame = Frame(window, bg="#FFFFFF", bd=0, highlightthickness=0)
-    monthly_sales_frame.place(
-        x=100.25,
-        y=400.75, 
-        width=315,
-        height=220
-    )
-    data = query_and_get_data(db_connection, 'SELECT month, total FROM monthly_sales')
-
-    # Create a Treeview widget
-    tree = ttk.Treeview(monthly_sales_frame, show='headings')
-
-    # Add columns to the Treeview
-    columns_to_display = ["Month", "Total"]
-    tree["columns"] = tuple(columns_to_display)
-
-    for column in columns_to_display:
-        tree.heading(column, text=column)
-        tree.column(column, width=100, anchor= "center")  # Adjust the width as needed
-
-    # Add data to the Treeview
-    for row in data:
-        tree.insert('', 'end', values=row)
-
-    # Add a scrollbar
-    scrollbar = ttk.Scrollbar(monthly_sales_frame, orient='vertical', command=tree.yview)
-    tree.configure(yscroll=scrollbar.set)
-
-    # Pack the Treeview and scrollbar
-    tree.pack(side='left', fill='both', expand=True)
-    scrollbar.pack(side='right', fill='y')
-
-    selected_item = tree.selection()
-    selected_row_values = tree.item(selected_item)['values']
 
     # Create a Matplotlib line graph
     graph_frame = Frame(window, bg="#FFFFFF", bd=0, highlightthickness=0)
@@ -394,8 +378,10 @@ def main():
         height=367.5 - 78.75
     )
 
-    months = [row[0] for row in data]
-    totals = [row[1] for row in data]
+    datas = query_and_get_data(db_connection, 'SELECT month, total FROM monthly_sales')
+
+    months = [row[0] for row in datas]
+    totals = [row[1] for row in datas]
 
     # Adjust the figure size as needed
     figsize = (18, 10)  # You can experiment with different sizes
@@ -422,9 +408,72 @@ def main():
     if latest_table:
         daily_sales_data = query_and_get_data(db_connection, f'SELECT products.name, `{latest_table}`.quantity, `{latest_table}`.subtotal FROM `{latest_table}` JOIN products ON `{latest_table}`.productID = products.productID')
         display_daily_sales(daily_sales_data)
+        display_monthly_sales(datas)
 
     window.resizable(False, False)
     window.mainloop()
+
+def save_button_clicked():
+    global trees
+    # Create a new daily_sales table
+    table_name = create_daily_sales_table(db_connection)
+
+    if trees:
+        selected_month = trees.selection()
+        if selected_month:
+            # Get the selected row values
+            selected_row_values = trees.item(selected_month)['values']
+
+            # Extract relevant data
+            month = selected_row_values[0]
+            print(month)
+
+            # Update the monthly_sales table
+            update_monthly_sales(db_connection, month)
+            daily_sales_data = query_and_get_data(db_connection, f'SELECT products.name, `{table_name}`.quantity, `{table_name}`.subtotal FROM `{table_name}` JOIN products ON `{table_name}`.productID = products.productID')
+            datas = query_and_get_data(db_connection, 'SELECT month, total FROM monthly_sales')
+            display_daily_sales(daily_sales_data)
+            display_monthly_sales(datas)
+
+                # Create a Matplotlib line graph
+            graph_frame = Frame(window, bg="#FFFFFF", bd=0, highlightthickness=0)
+            graph_frame.place(
+                x=26.25,
+                y=78.75,
+                width=470, 
+                height=367.5 - 78.75
+            )
+
+            months = [row[0] for row in datas]
+            totals = [row[1] for row in datas]
+                # Adjust the figure size as needed
+            figsize = (18, 10)  # You can experiment with different sizes
+            plt.figure(figsize=figsize, dpi=50)
+            plt.plot(months, totals, marker='o', color='b')
+            plt.xlabel('Month')
+            plt.ylabel('Total Sales')
+            plt.title('M O N T H L Y   S A L E S')
+            plt.grid(True)
+
+            canvas = FigureCanvasTkAgg(plt.gcf(), master=graph_frame)
+            canvas.draw()
+
+            toolbar = NavigationToolbar2Tk(canvas, graph_frame)
+            toolbar.update()
+            canvas.get_tk_widget().pack(side='top', fill='both')
+            plt.gcf().set_size_inches(6,4)
+
+
+            messagebox.showinfo("Save", f"Data saved to Database and monthly sales updated.")
+        else:
+            messagebox.showinfo("Save Error", "Please select a month to save.")
+
+    else:
+        messagebox.showinfo("Tree Error", "Tree is not initialized.")
+
+
+
+    db_connection.close()
 
 def delete_selected_row():
     global tree  # Access the global variable
