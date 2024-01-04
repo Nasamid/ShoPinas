@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import mysql.connector
 
 def connect_to_database(host, user, password, database):
@@ -49,23 +49,58 @@ def query_and_get_data(connection, query):
 
 from datetime import datetime
 
-def add_daily_sale(connection, product_id, quantity, subtotal):
-    """Add a new row to the daily_sales table with the current date."""
+def get_latest_daily_sales_table(connection):
     cursor = connection.cursor()
 
     try:
-        # Get the current date in the format YYYYMMDD
-        current_date = datetime.now().strftime("%Y%m%d")
+        # Fetch the names of all tables in the database
+        cursor.execute("SHOW TABLES")
+        tables = cursor.fetchall()
 
-        # Construct the table name
-        table_name = f"daily_sales_{current_date}"
+        # Filter tables that start with "daily_sales_" and extract the dates
+        date_format = "%Y%m%d"
+        table_dates = [
+            datetime.strptime(table[0].replace("daily_sales_", ""), date_format).date()
+            for table in tables
+            if table[0].startswith("daily_sales_")
+        ]
 
-        # Insert a new row into the dynamically named daily_sales table
-        query = f"INSERT INTO {table_name} (productID, quantity, subtotal) VALUES ({product_id}, {quantity}, {subtotal})"
-        cursor.execute(query)
+        # Find the latest date
+        latest_date = max(table_dates, default=None)
 
-        # Commit the changes to the database
-        connection.commit()
+        if latest_date:
+            # Construct the latest daily_sales table name
+            latest_table_name = f"daily_sales_{latest_date.strftime(date_format)}"
+            return latest_table_name
+        else:
+            print("No daily_sales table found in the database.")
+            return None
+
+    except Exception as e:
+        # Handle any exceptions (e.g., database errors)
+        print(f"Error getting latest daily_sales table: {e}")
+        return None
+
+    finally:
+        # Close the cursor
+        cursor.close()
+
+def add_daily_sale(connection, product_id, quantity, subtotal):
+    cursor = connection.cursor()
+
+    try:
+        # Get the latest daily_sales table
+        latest_table = get_latest_daily_sales_table(connection)
+
+        if latest_table:
+            # Insert a new row into the latest daily_sales table
+            query = f"INSERT INTO `{latest_table}` (productID, quantity, subtotal) VALUES ({product_id}, {quantity}, {subtotal})"
+            cursor.execute(query)
+
+            # Commit the changes to the database
+            connection.commit()
+        else:
+            print("No daily_sales table found for the latest date.")
 
     except Exception as e:
         # Handle any exceptions (e.g., database errors)
@@ -97,29 +132,55 @@ def fetch_monthly_sales_data(connection):
         cursor.close()
 
 def create_daily_sales_table(db_connection):
-    # Create a new table with the current date as the name
+    # Get the current date
     current_date = datetime.now().strftime("%Y%m%d")
-    table_name = f"daily_sales_{current_date}"
-    
+
+    # Check if the table for the current date exists
+    table_exists_query = f"SHOW TABLES LIKE 'daily_sales_{current_date}'"
     cursor = db_connection.cursor()
+    cursor.execute(table_exists_query)
+    table_exists = cursor.fetchone()
 
-    create_table_query = f"""
-    CREATE TABLE IF NOT EXISTS {table_name} (
-        salesID INT NOT NULL AUTO_INCREMENT, 
-        productID INT,
-        quantity INT,
-        subtotal FLOAT,
-        PRIMARY KEY (salesID),
-        FOREIGN KEY (productID) REFERENCES products(productID)
-    )
-    """
-    cursor.execute(create_table_query)
+    # If the table exists, increment the date and create a new table
+    if table_exists:
+        current_date_obj = datetime.strptime(current_date, "%Y%m%d")
+        next_date_obj = current_date_obj + timedelta(days=1)
+        next_date = next_date_obj.strftime("%Y%m%d")
+        table_name = f"daily_sales_{next_date}"
 
-    db_connection.commit()
+        create_table_query = f"""
+        CREATE TABLE IF NOT EXISTS {table_name} (
+            salesID INT NOT NULL AUTO_INCREMENT, 
+            productID INT,
+            quantity INT,
+            subtotal FLOAT,
+            PRIMARY KEY (salesID),
+            FOREIGN KEY (productID) REFERENCES products(productID)
+        )
+        """
+        cursor.execute(create_table_query)
+        db_connection.commit()
+
+    # If the table doesn't exist, create it with the current date
+    else:
+        table_name = f"daily_sales_{current_date}"
+
+        create_table_query = f"""
+        CREATE TABLE IF NOT EXISTS {table_name} (
+            salesID INT NOT NULL AUTO_INCREMENT, 
+            productID INT,
+            quantity INT,
+            subtotal FLOAT,
+            PRIMARY KEY (salesID),
+            FOREIGN KEY (productID) REFERENCES products(productID)
+        )
+        """
+        cursor.execute(create_table_query)
+        db_connection.commit()
+
     cursor.close()
 
     return table_name
-
 def close_connection(connection):
     """Close the MySQL database connection."""
     connection.close()

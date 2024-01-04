@@ -19,12 +19,15 @@ mysql_database = 'shopinas_database'
 # Connect to the MySQL database
 db_connection = connect_to_database(mysql_host, mysql_user, mysql_password, mysql_database)
 
+tree = None
+
 def relative_to_assets(path: str) -> Path:
     output_path = Path(__file__).parent
     assets_path = output_path / Path(r"C:\Users\danil\OneDrive\Desktop\JR\ShoPinas\New folder\build\assets\frame0")
     return assets_path / Path(path)
 
 def display_daily_sales(data):
+    global tree
     # Create a Frame inside the Canvas to hold the Tre]eview
     tree_frame = Frame(window, bg="#FFFFFF", bd=0, highlightthickness=0)
     tree_frame.place(
@@ -37,9 +40,14 @@ def display_daily_sales(data):
     tree = ttk.Treeview(tree_frame, columns=["Product", "Quantity", "Subtotal (Php)"], show='headings')
     
     # Add columns to the Treeview
-    for col in ["Product", "Quantity", "Subtotal (Php)"]:
-        tree.heading(col, text=col)
-        tree.column(col, width=100)  # Adjust the width as needed
+    tree.heading(0, text="Product")
+    tree.column(0, width=160) 
+
+    tree.heading(1, text="Quantity", anchor = "center")
+    tree.column(1, width=35, anchor = "center") 
+
+    tree.heading(2, text="Subtotal (Php)", anchor = "center")
+    tree.column(2, width=50, anchor = "center")  
 
     # Add data to the Treeview
     for row in data:
@@ -57,8 +65,11 @@ def display_daily_sales(data):
 def update_monthly_sales(db_connection, monthID):
     cursor = db_connection.cursor()
 
+    # Get the current date
+    current_date = datetime.now().strftime("%Y%m%d")
+
     # Fetch the subtotal values from the current daily_sales table
-    cursor.execute(f"SELECT subtotal FROM daily_sales")
+    cursor.execute(f"SELECT subtotal FROM daily_sales_{current_date}")
     subtotal_values = [row[0] for row in cursor.fetchall()]
 
     # Calculate the total for the current month
@@ -91,11 +102,31 @@ def open_addSales_and_destroy_window():
     window.destroy()
     os.system('python addSales.py')
 
+def get_latest_daily_sales_table(db_connection):
+    cursor = db_connection.cursor()
+
+    # Get the latest daily_sales table with a date later than today
+    current_date = datetime.now().strftime("%Y%m%d")
+    cursor.execute(f"SHOW TABLES LIKE 'daily_sales_%'")
+    tables = cursor.fetchall()
+
+    # Find the latest table with a date later than today
+    latest_table = None
+    for table in tables:
+        table_date_str = table[0].replace("daily_sales_", "")
+        table_date = datetime.strptime(table_date_str, "%Y%m%d")
+        if table_date > datetime.now():
+            if latest_table is None or table_date > latest_table:
+                latest_table = table_date
+
+    cursor.close()
+    return f"daily_sales_{latest_table.strftime('%Y%m%d')}" if latest_table else None
+
 def main():
     global window
     window = Tk()
 
-    window.geometry("938x656+400+150")
+    window.geometry("938x656+500+200")
     window.configure(bg="#F0F0F0")
 
     canvas = Canvas(
@@ -118,12 +149,13 @@ def main():
     )
 
     canvas.create_rectangle(
-    0.0, 
-    -31.25,
-    1356.25,
-    62.5,
-    fill="#FFFFFF", 
-    outline="#000000")
+        0.0, 
+        -31.25,
+        1356.25,
+        62.5,
+        fill="#FFFFFF", 
+        outline="#000000"
+    )
 
     canvas.create_text(
         222.41413157050078,
@@ -284,7 +316,7 @@ def main():
         image=button_image_3,
         borderwidth=0,
         highlightthickness=0,
-        command=lambda: print("button_3 clicked"),
+        command=delete_selected_row,
         relief="flat"
     )
     button_3.place(
@@ -331,7 +363,7 @@ def main():
 
     for column in columns_to_display:
         tree.heading(column, text=column)
-        tree.column(column, width=100)  # Adjust the width as needed
+        tree.column(column, width=100, anchor= "center")  # Adjust the width as needed
 
     # Add data to the Treeview
     for row in data:
@@ -344,6 +376,9 @@ def main():
     # Pack the Treeview and scrollbar
     tree.pack(side='left', fill='both', expand=True)
     scrollbar.pack(side='right', fill='y')
+
+    selected_item = tree.selection()
+    selected_row_values = tree.item(selected_item)['values']
 
     # Create a Matplotlib line graph
     graph_frame = Frame(window, bg="#FFFFFF", bd=0, highlightthickness=0)
@@ -376,13 +411,43 @@ def main():
 
     current_date = datetime.now().strftime("%Y%m%d")
 
-    # Automatically display the daily sales table upon window startup
-    daily_sales_data = query_and_get_data(db_connection, f'SELECT products.name, daily_sales_{current_date}.quantity, daily_sales_{current_date}.subtotal FROM daily_sales_{current_date} JOIN products ON daily_sales_{current_date}.productID = products.productID')
+    # Get the latest daily_sales table
+    latest_table = get_latest_daily_sales_table(db_connection)
 
-    display_daily_sales(daily_sales_data)
+    if latest_table:
+        daily_sales_data = query_and_get_data(db_connection, f'SELECT products.name, `{latest_table}`.quantity, `{latest_table}`.subtotal FROM `{latest_table}` JOIN products ON `{latest_table}`.productID = products.productID')
+        display_daily_sales(daily_sales_data)
 
     window.resizable(False, False)
     window.mainloop()
+
+def delete_selected_row():
+    global tree  # Access the global variable
+    if tree:
+        selected_item = tree.selection()
+        if selected_item:
+            # Get the selected row values
+            selected_row_values = tree.item(selected_item)['values']
+
+            # Extract relevant data
+            product_name = selected_row_values[0]
+            quantity = selected_row_values[1]
+
+            current_table = get_latest_daily_sales_table(db_connection)
+
+            # Delete the row from the daily_sales_{current_date} table
+            delete_query = f"DELETE FROM {current_table} WHERE productID = (SELECT productID FROM products WHERE name = '{product_name}') AND quantity = {quantity}"
+            cursor = db_connection.cursor()
+            cursor.execute(delete_query)
+            db_connection.commit()
+            cursor.close()
+
+            # Delete the selected item from the Treeview
+            tree.delete(selected_item)
+        else:
+            messagebox.showinfo("Delete Error", "Please select a row to delete.")
+    else:
+        messagebox.showinfo("Tree Error", "Tree is not initialized.")
 
 if __name__ == "__main__":
     main()
