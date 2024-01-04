@@ -7,7 +7,7 @@ import matplotlib
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from databaseHandler import connect_to_database, create_daily_sales_table, fetch_monthly_sales_data, query_and_get_data
+from databaseHandler import connect_to_database, create_daily_sales_table, fetch_monthly_sales_data, get_previous_latest_daily_sales_table, query_and_get_data
 from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
 
 # MySQL connection details
@@ -68,8 +68,10 @@ def update_monthly_sales(db_connection, monthID):
     # Get the current date
     current_date = datetime.now().strftime("%Y%m%d")
 
+    table_name = get_previous_latest_daily_sales_table(db_connection)
+
     # Fetch the subtotal values from the current daily_sales table
-    cursor.execute(f"SELECT subtotal FROM daily_sales_{current_date}")
+    cursor.execute(f"SELECT subtotal FROM {table_name}")
     subtotal_values = [row[0] for row in cursor.fetchall()]
 
     # Calculate the total for the current month
@@ -94,7 +96,10 @@ def save_button_clicked():
     current_month = 1  # Change this to the actual current month
     update_monthly_sales(db_connection, current_month)
 
-    messagebox.showinfo("Save", f"Data saved to {table_name} and monthly sales updated.")
+    daily_sales_data = query_and_get_data(db_connection, f'SELECT products.name, `{table_name}`.quantity, `{table_name}`.subtotal FROM `{table_name}` JOIN products ON `{table_name}`.productID = products.productID')
+    display_daily_sales(daily_sales_data)
+
+    messagebox.showinfo("Save", f"Data saved to Database and monthly sales updated.")
 
     db_connection.close()
 

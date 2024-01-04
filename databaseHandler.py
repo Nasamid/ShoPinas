@@ -131,6 +131,36 @@ def fetch_monthly_sales_data(connection):
     finally:
         cursor.close()
 
+from datetime import datetime, timedelta
+
+def get_previous_latest_daily_sales_table(db_connection):
+    cursor = db_connection.cursor()
+
+    # Get all tables with the prefix "daily_sales_"
+    cursor.execute("SHOW TABLES LIKE 'daily_sales_%'")
+    all_tables = cursor.fetchall()
+
+    # Check if there are at least two tables
+    if len(all_tables) >= 2:
+        # Extract dates from the table names
+        dates = [int(table[0].split('_')[2]) for table in all_tables]
+
+        # Sort the dates in descending order
+        sorted_dates = sorted(dates, reverse=True)
+
+        # Find the second-to-last date
+        previous_latest_date = sorted_dates[1]
+
+        # Construct the table name for the second-to-last date
+        previous_latest_table_name = f"daily_sales_{previous_latest_date}"
+
+        cursor.close()
+        return previous_latest_table_name
+    else:
+        # If there are not enough tables, return None
+        cursor.close()
+        return None
+
 def create_daily_sales_table(db_connection):
     # Get the current date
     current_date = datetime.now().strftime("%Y%m%d")
@@ -143,26 +173,36 @@ def create_daily_sales_table(db_connection):
 
     # If the table exists, increment the date and create a new table
     if table_exists:
-        current_date_obj = datetime.strptime(current_date, "%Y%m%d")
-        next_date_obj = current_date_obj + timedelta(days=1)
-        next_date = next_date_obj.strftime("%Y%m%d")
-        table_name = f"daily_sales_{next_date}"
+        latest_table_query = "SELECT MAX(TABLE_NAME) FROM information_schema.tables WHERE TABLE_NAME LIKE 'daily_sales_%'"
+        cursor.execute(latest_table_query)
+        latest_table = cursor.fetchone()[0]
 
-        create_table_query = f"""
-        CREATE TABLE IF NOT EXISTS {table_name} (
-            salesID INT NOT NULL AUTO_INCREMENT, 
-            productID INT,
-            quantity INT,
-            subtotal FLOAT,
-            PRIMARY KEY (salesID),
-            FOREIGN KEY (productID) REFERENCES products(productID)
-        )
-        """
-        cursor.execute(create_table_query)
-        db_connection.commit()
+        if latest_table:
+            latest_date_str = latest_table.split("_")[2]
+            latest_date_obj = datetime.strptime(latest_date_str, "%Y%m%d")
+            next_date_obj = latest_date_obj + timedelta(days=1)
+            next_date = next_date_obj.strftime("%Y%m%d")
+            table_name = f"daily_sales_{next_date}"
 
-    # If the table doesn't exist, create it with the current date
+            print(table_name)
+
+            create_table_query = f"""
+            CREATE TABLE IF NOT EXISTS {table_name} (
+                salesID INT NOT NULL AUTO_INCREMENT, 
+                productID INT,
+                quantity INT,
+                subtotal FLOAT,
+                PRIMARY KEY (salesID),
+                FOREIGN KEY (productID) REFERENCES products(productID)
+            )
+            """
+            cursor.execute(create_table_query)
+            db_connection.commit()
+        else:
+            print("Error getting latest table.")
+            table_name = None
     else:
+        print("Table doesn't exist")
         table_name = f"daily_sales_{current_date}"
 
         create_table_query = f"""
@@ -181,6 +221,7 @@ def create_daily_sales_table(db_connection):
     cursor.close()
 
     return table_name
+
 def close_connection(connection):
     """Close the MySQL database connection."""
     connection.close()
